@@ -1,0 +1,125 @@
+FILEWACTHER
+
+                                         * REGRA FILEWATCHER - CEAAF589
+#                                               ****************************************************
+#____________________________________________________________________________________________________
+#                                                                                                    |
+# PROCESSAMENTO - IDENTIFICA ARQ DO MF E TRANSFERE PARA O ITAU - PROCESSAMENTO ANUAL
+#____________________________________________________________________________________________________|
+#
+#  ______________________________
+# |
+# |Desenvolvido: Roberto Martins
+# |_____________________________
+#
+# CEAAF589 -> Nome do arquivo sem diretório
+# CEAAF589_2 -> Nome do arquivo de destino e com opções de processamento no destino
+# CEAAF589_3 -> Informação de local para gravacao no destino. UNIT=ROBO / UNIT=SYSDA
+# CEAAF589_4 -> Opções de processamento na origem. Se não tiver, deixar um espaço em branco. Ex.: sysopts=":datatype=binary:"
+# CEAAF589_5 -> Auxiliar em alguns casos onde é preciso pegar uma substring antes de definir o nome.
+#
+
+INTERVAL 5
+WAIT_TIME 30
+MIN_AGE 5min
+MON_SIZE_WILDCARD Y
+
+
+
+       ON_FILEWATCH /home/cduser/ITAU/BX.REMS.REM1.CNDIDN.SERASA.CADUS1.D*
+THEN
+        DO_CMD ctmvar -action set -var "%%\CEAAF589" -VAREXPR "%%SUBSTR %FILENAME% 19 196"
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_2" -VAREXPR 'BX.REMS.REM1.CNDIDN.SERASA.CADUS1(+1) DCB=(RECFM=FB,LRECL=253) SYSOPTS="DATATYPE(BINARY)" '
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_3" -VAREXPR ' UNIT=ROBO '
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_4" -VAREXPR ' sysopts=":datatype=binary:" '
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_5" -VAREXPR '/home/cduser/ITAU'
+        DO_EXIT 0
+END_ON
+
+ON_FILEWATCH /home/cduser/ITAU/BX.REMS.REM1.CNDIDN.SERASA.CADUS4.D*
+THEN
+        DO_CMD ctmvar -action set -var "%%\CEAAF589" -VAREXPR "%%SUBSTR %FILENAME% 19 196"
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_2" -VAREXPR 'BX.REMS.REM1.CNDIDN.SERASA.CADUS4(+1) DCB=(RECFM=FB,LRECL=253) SYSOPTS="DATATYPE(BINARY)" '
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_3" -VAREXPR ' UNIT=ROBO '
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_4" -VAREXPR 'sysopts=":datatype=binary:" '
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_5" -VAREXPR '/home/cduser/ITAU'
+        DO_EXIT 0
+END_ON
+ON_FILEWATCH /home/cduser/ITAU/BX.REMS.REM1.CNDUDN.SERASA.CCF01B.D*
+THEN
+        DO_CMD ctmvar -action set -var "%%\CEAAF589" -VAREXPR "%%SUBSTR %FILENAME% 19 196"
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_2" -VAREXPR 'BX.REMS.REM1.CNDUDN.SERASA.CCF01B(+1) DCB=(LRECL=253,RECFM=FB) '
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_3" -VAREXPR ' UNIT=ROBO '
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_4" -VAREXPR ' '
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_5" -VAREXPR '/home/cduser/ITAU'
+        DO_EXIT 0
+END_ON
+
+
+ON_FILEWATCH /home/cduser/ITAU/BX.REMS.REM1.CNDIDN.SERASA1.MD3B.D*
+THEN
+        DO_CMD ctmvar -action set -var "%%\CEAAF589" -VAREXPR "%%SUBSTR %FILENAME% 19 196"
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_2" -VAREXPR 'BX.REMS.REM1.CNDIDN.SERASA1.MD3B(+1) DCB=(RECFM=FB,LRECL=253) SYSOPTS="DATATYPE(BINARY)" '
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_3" -VAREXPR ' UNIT=ROBO '
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_4" -VAREXPR ' sysopts=":datatype=binary:" '
+        DO_CMD ctmvar -action set -var "%%\CEAAF589_5" -VAREXPR '/home/cduser/ITAU'
+        DO_EXIT 0
+
+
+###################################################### connect client#############################################################
+
+Monitora em edilinux /home/cduser/ envia ao cliente 
+ITAU - Envio de arquivos para ITAU
+#
+set +xv
+echo " "
+echo "------------------------------------------------------------------------------------------------"
+echo "-- Executa Connect Direct para Itau                                                             "
+echo "--                                                                                              "
+echo "--   Linha de comando esperada:                                                                 "
+echo "--   /home/cduser/ITAU/PACDD0AB_ITAUOUTROS_CE.sh %%PAFWD0AB_ITAUOUTROS_CE '%%PAFWD0AB_ITAUOUTROS_CE_2' '%%PAFWD0AB_ITAUOUTROS_CE_3' '%%PAFWD0AB_ITAUOUTROS_CE_4'    "
+echo "--                                                                                              "
+echo "--                                                                                              "
+echo "------------------------------------------------------------------------------------------------"
+echo "--  ******** INFORMACOES EM CASO DE ABEND POR FALTA DE ESPACO NO ITAU *******                   "
+echo "--  Trocar o '%%PAFWD0AB_ITAUOUTROS_CE_3' para 'UNIT=ROBO' e processar novamente o arquivo.     "
+echo "--               (coloque entre aspas simples como acima)                                       "
+echo "--                                                                                              "
+echo "--  *** IMPORTANTE *** Retornar o parametro para o valor original '%%PAFWD0AB_ITAUOUTROS_CE_3'  "
+echo "--      (nao esqueca as aspas simples) apos a execucao.                                        "
+echo "------------------------------------------------------------------------------------------------"
+echo " "
+
+echo "Linha de comando recebida: "
+echo $0 $*
+
+echo " "
+echo " ============= Comando de transmissao com as variaveis sendo exibidas ============= "
+cat << EOJ
+submit maxdelay=unlimited CEAAC590 process prty=11 snode=ITAU1
+step1 copy from (file=$5/FW_TMP/$1 $4 pnode)
+           to   (file=$2 $3 snode)
+step2 if (step1 eq 0) then
+         run task pnode sysopts="rm $5/FW_TMP/$1"
+      eif
+pend;
+EOJ
+
+echo " ============= "
+
+set -xv
+
+mv -vf $5/$1 $5/FW_TMP/
+
+direct << EOJ
+submit maxdelay=unlimited CEAAC590 process prty=11 snode=ITAU1
+step1 copy from (file=$5/FW_TMP/$1 $4 pnode)
+           to   (file=$2 $3 snode)
+               COMPRESS EXT
+step2 if (step1 eq 0) then
+         run task pnode sysopts="rm $5/FW_TMP/$1"
+      eif
+pend;
+EOJ
+
+
