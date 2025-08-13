@@ -1,0 +1,61 @@
+[ctmag630@edilinux ~]$ cat /opt/ctmage/ctm_scripts/ctm_dat/CEADF001.dat
+#  ________________________
+# |
+# |CARREFOUR ESPELHAMENTO RESTRITIVOS
+# |________________________
+#
+INTERVAL 20
+WAIT_TIME 30
+MIN_AGE 1min
+MON_SIZE_WILDCARD Y
+
+
+ON_FILEWATCH /home/cduser/CARREFOUR/NDM.ND36801.RGBASNEG.RETPF?.D?????? CREATE
+THEN
+        DO_CMD ctmvar -action set -var "%%\CEADF001" -VAREXPR "%%SUBSTR %FILENAME% 24 215"
+        DO_EXIT 0
+END_ON
+[ctmag630@edilinux ~]$ ^C
+[ctmag630@edilinux ~]$
+
+
+  ##########################################connect #######################
+
+  
+set -v
+
+tr -d '\000' < /home/cduser/CARREFOUR/$1 > /home/cduser/CARREFOUR/$1.TXT
+
+
+   if [ $? -ne 0 ]
+      then
+      echo "Erro na conversão do arquivo."
+      exit 3
+   fi
+
+mv -vf /home/cduser/CARREFOUR/$1.TXT /home/cduser/CARREFOUR/FW_TMP/$1.TXT
+rm /home/cduser/CARREFOUR/$1
+
+direct << EOJ
+submit maxdelay=unlimited CEADC002 process snode=CDCSF
+STEP1 copy from (file=/home/cduser/CARREFOUR/FW_TMP/$1.TXT sysopts=":datatype=binary:" pnode)
+to   (file=$1.TXT sysopts="datatype(binary)" snode)
+STEP2 if (STEP1 eq 0) then
+         run task pnode sysopts="rm /home/cduser/CARREFOUR/FW_TMP/$1.TXT"
+      eif
+
+
+  ########################################segunda opção de connect ###############################
+
+  set -v
+# mv -vf /home/ctmag630/arquivos/carrefour/$1 /home/ctmag630/arquivos/carrefour/FW_TMP/
+# NOME ANTIGO DO PROCESSO CEADC062 ATE 03/04/2020 15H50
+direct << EOJ
+submit maxdelay=unlimited CEADC366  process snode=CDCSF
+STEP1 copy from (file=/home/cduser/CARREFOUR/Retorno/$1 sysopts=":datatype=binary:" pnode)
+to   (file=$1 sysopts="datatype(binary)" snode)
+STEP2 if (STEP1 eq 0) then
+         run task pnode sysopts="rm /home/cduser/CARREFOUR/Retorno/$1"
+      eif
+pend;
+EOJ
