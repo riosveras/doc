@@ -1,0 +1,83 @@
+ ****************************************************
+#                     * REGRA FILEWATCHER - CEADF021
+#                     ****************************************************
+#________________________________________________________________________________________________
+#
+# PROCESSAMENTO - IDENTIFICA ARQ recebido do MF e transfere para cliente BASA
+#________________________________________________________________________________________________
+#  ________________________
+# |
+# |Desenvolvido: Roberto Martins
+# |________________________
+#
+INTERVAL 10
+WAIT_TIME 30
+MIN_AGE 10min
+MON_SIZE_WILDCARD Y
+
+ON_FILEWATCH /home/cduser/BASA/RCHEQ.RET.P003.*
+THEN
+        DO_CMD ctmvar -action set -var "%%\CEADF021" -VAREXPR "%%SUBSTR %FILENAME% 19 215"
+        DO_EXIT 0
+END_ON
+
+ON_FILEWATCH /home/cduser/BASA/ACHEI.D*.H*.TXT
+THEN
+        DO_CMD ctmvar -action set -var "%%\CEADF021" -VAREXPR "%%SUBSTR %FILENAME% 19 215"
+        DO_EXIT 0
+END_ON
+
+ON_FILEWATCH /home/cduser/BASA/RET_SERASA_*.TXT
+THEN
+        DO_CMD ctmvar -action set -var "%%\CEADF021" -VAREXPR "%%SUBSTR %FILENAME% 19 215"
+        DO_EXIT 0
+END_ON
+
+# ON_FILEWATCH /home/cduser/BASA/INFORMACIONAL_RET_SERASA*
+#THEN
+#        DO_CMD ctmvar -action set -var "%%\CEADF021" -VAREXPR "%%SUBSTR %FILENAME% 19 215"
+#        DO_EXIT 0
+#END_ON
+
+####################################################fim##################################################################################
+
+#
+# BASA - Envio do retorno do mainframe para Banco da Amazonia
+#        Esta task e ativada pelo connect:direct - mainframe Serasa
+#        passando como parametro ($1) o nome do arquivo
+#        Verifica se o arquivo a ser transmitido e RECHEQUE ou ACHEI para
+#        direciona-lo para o diretorio especifico
+#
+set -v
+DATA=`date '+%d%m%Y'`
+nome=`ls $1 | cut -c 1-5`
+dt=`date +%m%d`
+hr=`date +%H%M%S`
+an=`date +%G`
+if [ $nome = RCHEQ ] ; then
+   diret='c:\transf\arqhost\mdx\recheque\cheque.003.'d$dt.h$hr.txt
+else
+if [ $nome = ACHEI ] ; then
+   diret='c:\transf\arqhost\mds\serasa\'$1
+else
+   diret='c:\Integracao\SERASA\GESCOB\'$1
+#else
+#if [ $nome = INFOR ] ; then
+#diret='c:\Integracao\SERASA\GESCOB\'RETINF_SERASA_${DATA}.TXT
+fi
+fi
+direct << EOJ
+submit maxdelay=unlimited CEADC022 process snode=JACA
+rtsera  copy from (file=/home/cduser/BASA/$1
+                 pnode)
+                 ckpt=500k
+                 compress extended
+           to   (file=$diret
+                snode
+                 )
+rtdel if (rtsera=0) then
+      run task pnode sysopts="rm /home/cduser/BASA/$1"
+      eif
+pend;
+EOJ
+###########################################################################
