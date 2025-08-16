@@ -1,0 +1,20 @@
+#!/bin/bash
+##                          ESPELHAMENTO NEGATIVOS PORTO PF               ###
+##                                                                        ###
+##                                                                        ###
+
+
+DIR_DEST=/arquivos/PROD/AWS2PA/PORTO
+DIR_ORIG=s3://experian-reports-extraction-files-prod/ESPNEG/ESPNEG_PORTO_PF/extraction/part_3/transfer
+DIR_COPY=s3://experian-reports-extraction-files-prod/ESPNEG/ESPNEG_PORTO_PF/extraction/part_3/transferred
+CD_DIR_ORIG=s3-nike-ds-warriors://experian-reports-extraction-files-prod/ESPNEGE/ESPNEG_PORTO_PF/extraction/part_3/transfer
+CD_DIR_COPY=s3-nike-ds-warriors://experian-reports-extraction-files-prod/ESPNEG//ESPNEG_PORTO_PF/extraction/part_3/transferred
+END_POINT=https://bucket.vpce-0f1f22b77a9cf5447-ya085u6l.s3.sa-east-1.vpce.amazonaws.com
+ARQ_ORIG=$(aws s3 --profile s3-nike-ds-warriors --region sa-east-1 --endpoint-url $END_POINT ls $DIR_ORIG/ | awk '{print $4}' | grep -v '
+^$' | xargs)
+
+#copia arquivo para transferred
+aws s3 --profile s3-nike-ds-warriors --region sa-east-1 --endpoint-url $END_POINT cp $DIR_ORIG/ $DIR_COPY/ --recursive --exclude "*" --include "ESPNEG*"
+
+#Move o arquivos para spobrcdgw02
+aws s3 --profile s3-nike-ds-warriors --region sa-east-1 --endpoint-url $END_POINT cp $DIR_ORIG/ $DIR_DEST/ --recursive --exclude "*" --include "ESPNEG*"
