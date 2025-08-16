@@ -1,0 +1,80 @@
+INTERVAL 5
+WAIT_TIME 20
+MIN_AGE 5min
+MON_SIZE_WILDCARD Y
+
+ON_FILEWATCH /arquivos/HOM/PA2MF/HOM.NS03573.*.D*.H* CREATE
+THEN
+DO_CMD ctmvar -action set -var "%%\CEIDF612" -VAREXPR "%%SUBSTR %FILENAME% 21 215"
+DO_EXIT 0
+END_ON
+
+[ctmag630@spobrcdgw02 ~]$ cat /opt/ctmage/ctm_scripts/CEIDC613.sh
+#
+# Envio de arquivos
+#
+#
+set +xv
+
+####### Variaveis usadas no job
+DATA=`date '+%d%m%y'`
+HORA=`date '+%H%M%S'`
+ARQ_ORIG=$1
+ARQ_DEST=$1
+DIR_ORIG=/arquivos/HOM/PA2MF
+P_NAME=CEIDC613
+NODE_DEST=NDMTCP
+#######
+
+#echo "Linha de comando recebida: "
+#echo $0 $*
+#
+set -xv
+
+if [ -f ${DIR_ORIG}/${ARQ_ORIG} ]
+then
+   mv -vf   ${DIR_ORIG}/${ARQ_ORIG}    ${DIR_ORIG}/FW_TMP/${ARQ_ORIG}
+   if [ $? -ne 0 ]
+      then
+      echo "Erro na movimentacao do arquivo."
+      exit 15
+   fi
+else
+   echo "Arquivo nao existe"
+   exit 18
+fi
+
+set +xv
+
+#Executa script do header
+#/opt/ctmage/ctm_scripts/adicionar-nomenclatura-header.sh %%CTIDF009_01
+
+echo " "
+echo " ============= Comando de transmissao com as variaveis sendo exibidas ============= "
+cat << EOJ
+submit maxdelay=unlimited ${P_NAME} process snode=${NODE_DEST}
+step1 copy from (file=${DIR_ORIG}/FW_TMP/${ARQ_ORIG}
+                  pnode)
+           to   (file=${ARQ_DEST} snode)
+step2 if (step1 eq 0) then
+         run task pnode sysopts="rm ${DIR_ORIG}/FW_TMP/${ARQ_ORIG}"
+      eif
+pend;
+EOJ
+
+echo " ============= "
+
+
+export NDMAPICFG=/opt/cduser/cdunix/ndm/cfg/cliapi/ndmapi.cfg
+
+/opt/cduser/cdunix/ndm/bin/direct << EOJ
+submit maxdelay=unlimited ${P_NAME} process snode=${NODE_DEST}
+step1 copy from (file=${DIR_ORIG}/FW_TMP/${ARQ_ORIG}
+                  pnode)
+           to   (file=${ARQ_DEST}
+                          snode)
+step2 if (step1 eq 0) then
+         run task pnode sysopts="rm ${DIR_ORIG}/FW_TMP/${ARQ_ORIG}"
+      eif
+pend;
+EOJ
