@@ -1,0 +1,56 @@
+#!/bin/bash
+###                          ESPELHAMENTO NEGATIBO FACON PJ                         ###
+
+DATA=$(date +%y%m%d)
+DATAM=$(date +%d%m%Y)
+HORA=$(date +%H%M%S)
+ARQ_DEST=BRP.BM.DSG10.BMPS1050.MOV.SAI4.CLO
+PARM_CD_DEST=' DCB=(LRECL=200,RECFM=FB)'
+DIR_ORIG=s3://experian-reports-extraction-files-prod/ESPNEG/ESPFAC_PJ/extraction/part_1/transfer
+DIR_COPY=s3://experian-reports-extraction-files-prod/ESPNEG/ESPFAC_PJ/extraction/part_1/transferred
+CD_DIR_ORIG=s3-nike-ds-warriors://experian-reports-extraction-files-prod/ESPNEG/ESPFAC_PJ/extraction/part_1/transfer
+CD_DIR_COPY=s3-nike-ds-warriors://experian-reports-extraction-files-prod/ESPNEG/ESPFAC_PJ/extraction/part_1/transferred
+END_POINT=https://bucket.vpce-0f1f22b77a9cf5447-ya085u6l.s3.sa-east-1.vpce.amazonaws.com
+P_NAME=CEASC699
+NODE_DEST=NDMTCP
+#######
+
+#echo "Linha de comando recebida: "
+#echo $0 $*
+#
+
+#copia arquivo para transferred
+aws s3 --profile s3-nike-ds-warriors --region sa-east-1 --endpoint-url $END_POINT cp $DIR_ORIG/ $DIR_COPY/ --recursive --exclude "*" --include "ESPFAC*"
+
+
+ARQ_ORIG=$(aws s3 --profile s3-nike-ds-warriors --region sa-east-1 --endpoint-url $END_POINT ls $DIR_ORIG/ | awk '{print $4}' | grep -v '^$' | xargs)
+CD_ORIG=$CD_DIR_ORIG/$ARQ_ORIG
+
+cat << EOJ
+aws s3 --profile s3-nike-ds-warriors --region sa-east-1 --endpoint-url $END_POINT ls $DIR_ORIG/ | awk '{print $4}'
+EOJ
+
+echo " "
+echo " ============= Comando de transmissao com as variaveis sendo exibidas ============= "
+cat << EOJ
+submit maxdelay=unlimited ${P_NAME} process snode=${NODE_DEST}
+step1 copy from (file=${CD_ORIG}
+                  pnode)
+                compress extended
+           to   (file=${ARQ_DEST}(+1)
+                            ${PARM_CD_DEST} snode)
+pend;
+EOJ
+
+echo " ============= "
+
+
+direct  <<  EOJ
+submit maxdelay=unlimited ${P_NAME} process snode=${NODE_DEST}
+step1 copy from (file=${CD_ORIG}
+                  pnode)
+                compress extended
+           to   (file=${ARQ_DEST}(+1)
+                            ${PARM_CD_DEST} snode)
+pend;
+EOJ
