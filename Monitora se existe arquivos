@@ -1,0 +1,41 @@
+## Monitora se existe arquivos do CADUS do ITAU parados no servidor EDILINUX
+##
+## Diretorios Monitorados = /home/cduser/ITAU && /home/cduser/ITAU/FW_TMP
+##
+## Linha de comando no Control-M:
+##
+##
+## V1.1 - Verificacao da existencia dos arquivos BX.REMS.REM1.CNDIDN.SERASA1.MD3.D*.H* or BXM.REMSR1.D*.H*
+##
+## Author - Rafael Brogini Ferreira
+
+echo "********************************************"
+echo "*     JOB MONITORA_CADUS                    "
+echo "********************************************"
+echo ""
+echo "AMBIENTE.:  PRODUCAO                        "
+echo ""
+echo "Objetivo.:                                  "
+echo "Identificar e avisar a Operacao sobre arquivos do CADUS parados no servidor EDILINUX"
+echo ""
+echo ""
+
+SAIR=0
+
+for DIR in `cat /home/cduser/ITAU/monitora_cadus`
+do
+if [ "$(ls -A $DIR)" ]; then
+     echo "Tranmissoes do CADUS podem sofrer atraso"
+     echo "Arquivo" ${DIR} " pendente de transmissao"
+     echo "Favor acompanhar e verificar se o arquivo" ${DIR} "foi transmitido com sucesso pelo Job PACDD0AB_ITAUOUTROS_CE"
+     ls -l ${DIR}
+     echo ""
+     echo ""
+     SAIR=2
+else
+#    echo "Diretorio" ${DIR} " esta vazio"
+#    SAIR=0
+echo ""
+fi
+done
+exit ${SAIR}
