@@ -1,0 +1,31 @@
+#                     * REGRA FILEWATCHER - CEAMF695
+#                     ****************************************************
+
+#
+INTERVAL 20
+WAIT_TIME 30
+MIN_AGE 5min
+MON_SIZE_WILDCARD Y
+
+ON_FILEWATCH /arquivos/PROD/AWS2PA/PORTO/ESPNEG_PORTO_PJ_part_*_D*.txt CREATE
+THEN
+DO_CMD ctmvar -action set -var "%%\CEAMF695_1" -VAREXPR "%%SUBSTR %FILENAME% 29 187"
+DO_CMD ctmvar -action set -var "%%\CEAMF695_2" -VAREXPR "%%SUBSTR %FILENAME% 50 1"
+DO_EXIT 0
+END_ON
+
+[ctmag630@spobrcdgw02 ~]$ cat /opt/ctmage/ctm_scripts/CEAMS696.sh
+DATA=`date '+%Y%m%d'`
+HORA=`date '+%H%M%S'`
+ARQ_ORIG=$1
+DIR_ORIG=/arquivos/PROD/AWS2PA/PORTO
+ARQ_DEST=serasa_restricao_pj_0$2_${DATA}${HORA}.txt
+cd  /arquivos/PROD/AWS2PA/PORTO/
+mv ${DIR_ORIG}/${ARQ_ORIG} ${DIR_ORIG}/${ARQ_DEST}
+tar -cf ${ARQ_DEST}.tar ${ARQ_DEST}
+gzip -9 ${ARQ_DEST}.tar
+chmod 777 ${ARQ_DEST}.tar.gz
+# cp ${ARQ_DEST}.tar.gz ${DIR_ORIG}/porneg$2$3.tar.gz
+# chmod 777 ${DIR_ORIG}/porneg$2$3.tar.gz
+# chmod 777 ${ARQ_DEST}.tar.gz
+rm ${ARQ_DEST}
