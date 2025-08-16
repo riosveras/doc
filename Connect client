@@ -123,3 +123,44 @@ pend;
 EOJ
 
 
+##########################################################################FIM###############################################
+# ********************************************
+# * JOB: CEADF061                            *
+# ********************************************
+
+# PROCESSAMENTO - IDENTIFICA O ARQUIVOS DE RETORNO DO CARREFOUR ENVIADOS PARA A SERASA
+
+INTERVAL 1
+WAIT_TIME 30
+MIN_AGE 1min
+MON_SIZE_WILDCARD Y
+
+ON_FILEWATCH /home/cduser/CARREFOUR/Retorno/PDV_SERASA_** CREATE
+THEN
+        DO_CMD ctmvar -action set -var "%%\CEADF061" -VAREXPR "%%SUBSTR %FILENAME% 32 183"
+END_ON
+
+[ctmag630@edilinux ~]$ cat /home/cduser/CARREFOUR/CEADC062.sh
+ # *************************************************************************
+# * DESCRICAO: Script do Connect Direct para a transmissao  de             *
+# *            arquivos do Servidor EDILINUX para o CARREFOUR              *
+# *            Utiliza o usuario carrecon                                          *
+# * AUTHOR: Vinicius Martins                                                         *
+# * RELEASE: 29/01/2016                                                               *
+# **************************************************************************
+
+set -v
+mv -vf /home/cduser/CARREFOUR/Retorno/$1 /home/cduser/CARREFOUR/Retorno/FW_TMP/
+
+direct << EOJ
+submit maxdelay=unlimited CEADC062 process snode=CDCSF
+STEP1 copy from (file=/home/cduser/CARREFOUR/Retorno/FW_TMP/$1 sysopts=":datatype=binary:" pnode)
+to   (file=$1 sysopts="datatype(binary)" snode)
+STEP2 if (STEP1 eq 0) then
+         run task pnode sysopts="rm /home/cduser/CARREFOUR/Retorno/FW_TMP/$1"
+      eif
+pend;
+EOJ
+##################################################FIM##################################################################
+
+
