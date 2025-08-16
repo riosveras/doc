@@ -1,0 +1,85 @@
+INTERVAL 10
+WAIT_TIME 30
+MIN_AGE 10min
+MON_SIZE_WILDCARD Y
+
+ON_FILEWATCH /home/cduser/BASA/ACHEI???????
+THEN
+        DO_CMD ctmvar -action set -var "%%\CEADF023" -VAREXPR "%%SUBSTR %FILENAME% 19 215"
+        DO_EXIT 0
+END_ON
+
+##### RITM2001909 #####
+
+#ON_FILEWATCH /home/cduser/BASA/gcenv_serasa_????????.txt
+#THEN
+#       DO_CMD ctmvar -action set -var "%%\CEADF023" -VAREXPR "%%SUBSTR %FILENAME% 19 215"
+#       DO_EXIT 0
+#END_ON
+
+ON_FILEWATCH /home/cduser/BASA/chq*
+THEN
+        DO_CMD ctmvar -action set -var "%%\CEADF023" -VAREXPR "%%SUBSTR %FILENAME% 19 215"
+        DO_EXIT 0
+END_ON
+
+[ctmag630@edilinux ~]$ cat /home/cduser/BASA/CEADC024.sh
+#
+# BASA - Transmissao de arquivo vindo do B. Amazonia para mainframe
+#        Esta task e ativada pelo connect:direct no BASA
+#        passando como parametro ($1) o nome do arquivo
+#        Verifica se o arquivo e RECHEQUE ou ACHEI para gerar o GDG
+#        correspondente
+#exec 2>> /tmp/shellout.$$
+#exec 1>> /tmp/shellout.$$
+set -x
+PATH=$PATH:$HOME/bin:/opt/cduser/cdunix41/ndm/bin:/usr/bin
+export NDMAPICFG=/opt/cduser/cdunix41/ndm/cfg/cliapi/ndmapi.cfg
+set
+DATA=`date '+%d%m%y'`
+HORA=`date '+%H%M%S'`
+#
+set -v
+nome=`/bin/ls $1 | /bin/cut -c 1-3`
+if [ $nome = chq ] ; then
+   ARQ="NDM.ND00301.RECHEQUE.D${DATA}.H${HORA}"
+   dos2unix $1 $1
+   FMT=FB
+   TAM=149
+   BLOCK=27863
+   NOME=RECHEQUE
+else
+if [ $nome = gce ] ; then
+   ARQ="NDM.ND00301.REFIN.D${DATA}.H${HORA}"
+   dos2unix $1 $1
+   FMT=FB
+   TAM=600
+   BLOCK=0
+   NOME=REFIN
+else
+   ARQ="NDM.ND00301.ACHEI.D${DATA}.H${HORA}"
+   FMT=VB
+   TAM=27994
+   BLOCK=27998
+   NOME=ACHEI
+fi
+fi
+direct << EOJ
+submit maxdelay=unlimited CEADC024 process snode=NDMTCP
+step1 copy from (file=/home/cduser/BASA/$1
+                 pnode
+                )
+           to   (file=$ARQ
+                DCB=(RECFM=$FMT,DSORG=PS,LRECL=$TAM,
+                BLKSIZE=$BLOCK)
+                DISP=(NEW,CATLG)
+                UNIT=NDMTRA
+                SNODE
+                 )
+step2 if (step1 = 0) then
+        run task snode (PGM=DMNOTIFY)
+        sysopts="CL4'GOOD',CL44'ARQUIVO.ND00301.$NOME.OK'"
+        run task pnode sysopts="/bin/rm $1"
+      eif
+pend;
+EOJ
