@@ -1,0 +1,59 @@
+#                     ****************************************************
+#                     * REGRA FILEWATCHER - PAN CEASF672_3
+#                     ****************************************************
+
+#
+INTERVAL 20
+WAIT_TIME 30
+MIN_AGE 10min
+MON_SIZE_WILDCARD Y
+
+
+# %%\CEASF6721_1 - arquivo sem diretorio de origem
+# %%\CEASF6721_2 - prefixo do arquivo de destino
+# %%\CEASF6721_3 - ordem dos arquivos PF para formar o arquivo de destino recortada da posicao 52 do arquivo de origem
+# %%\CEASF6721_4 - data que completara o arquivo de destino recortada da data do arquivo de origem
+
+
+
+
+ON_FILEWATCH /arquivos/PROD/MF2PA/NIKE_PAN/ESPNEG_PAN_PF_part_1_D??????.txt CREATE
+THEN
+DO_CMD ctmvar -action set -var "%%\CEASF6721_1" -VAREXPR "%%SUBSTR %FILENAME% 31 187"
+DO_CMD ctmvar -action set -var "%%\CEASF6721_2" -VAREXPR "restritivo-pf"
+DO_CMD ctmvar -action set -var "%%\CEASF6721_3" -VAREXPR "%%SUBSTR %FILENAME% 50 1"
+DO_CMD ctmvar -action set -var "%%\CEASF6721_4" -VAREXPR "%%SUBSTR %FILENAME% 53 6"
+DO_EXIT 0
+END_ON
+[ctmag630@spobrcdgw02 ~]$ cat /opt/ctmage/ctm_scripts/CEASS6731.sh
+ARQ_ORIG=$1
+ARQ_DEST=$2$3-20$4
+DIR_ORIG=/arquivos/PROD/MF2PA/NIKE_PAN
+DIR_DEST1=/arquivos/PROD/MF2PA/NIKE_PAN/C1PAN
+DIR_DEST2=/arquivos/PROD/MF2PA/NIKE_PAN/L2306
+DIR_DEST3=/arquivos/PROD/MF2PA/NIKE_PAN/L2363
+cd ${DIR_ORIG}
+mv ${ARQ_ORIG} ${ARQ_DEST}
+bzip2 -sv ${ARQ_DEST}
+chmod 775 ${ARQ_DEST}.bz2
+cp ${ARQ_DEST}.bz2 ${DIR_DEST1}/
+cp ${ARQ_DEST}.bz2 ${DIR_DEST2}/
+mv ${ARQ_DEST}.bz2 ${DIR_DEST3}/
+
+
+
+
+############################################################outro exemplo#######################################################
+ARQ_ORIG=$1
+ARQ_DEST=$2-20$3
+DIR_ORIG=/arquivos/PROD/MF2PA
+DIR_DEST1=/arquivos/PROD/MF2PA/C1PAN
+DIR_DEST2=/arquivos/PROD/MF2PA/L2306
+DIR_DEST3=/arquivos/PROD/MF2PA/L2363
+cd ${DIR_ORIG}
+mv ${ARQ_ORIG} ${ARQ_DEST}
+bzip2 -sv ${ARQ_DEST}
+chmod 775 ${ARQ_DEST}.bz2
+cp ${ARQ_DEST}.bz2 ${DIR_DEST1}/
+cp ${ARQ_DEST}.bz2 ${DIR_DEST2}/
+mv ${ARQ_DEST}.bz2 ${DIR_DEST3}/
